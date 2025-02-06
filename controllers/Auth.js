@@ -2,48 +2,48 @@ const User = require("../model/User");
 const OTP = require("../model/OTP");
 const otpGenerator = require("otp-generator");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 //Send OTP Controller
 exports.sendOTP = async (req, res) => {
   try {
     const { email } = req.body;
 
-    const checkUserPresent = await User.findOne({ email });
-    if (checkUserPresent) {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res.status(401).json({
-        succuss: false,
-        meassage: "User already Exit",
+        success: false,
+        message: "User already exists",
       });
     }
 
-    //otp generate
-    var otp = otpGenerator.generate(6, {
-      upperCaseAlphabets: false,
-      lowerCaseAlphabets: false,
-      specialChars: false,
-    });
-    let checkOtp = await OTP.findOne({ otp });
-    if (checkOtp) {
+    // Generate a unique OTP
+    let otp;
+    do {
       otp = otpGenerator.generate(6, {
         upperCaseAlphabets: false,
         lowerCaseAlphabets: false,
         specialChars: false,
       });
-    }
+    } while (await OTP.findOne({ otp }));
 
+    // Store OTP in database
     const otpPayload = { email, otp };
     const otpBody = await OTP.create(otpPayload);
     console.log(otpBody);
 
+    // Return success response
     res.status(200).json({
       success: true,
-      meassage: "OTP sent successfully!",
+      message: "OTP sent successfully!",
     });
   } catch (error) {
-    console.log(error.meassage);
+    console.log(error.message);
     res.status(500).json({
       success: false,
-      meassage: "Error While Sending OTP",
+      message: "Error while sending OTP",
     });
   }
 };
@@ -51,7 +51,7 @@ exports.sendOTP = async (req, res) => {
 //Sign Up Controller
 exports.signUp = async (req, res) => {
   try {
-    //Data Fetch from body
+    // Data Fetch from body
     const {
       firstName,
       lastName,
@@ -65,7 +65,7 @@ exports.signUp = async (req, res) => {
       otp,
     } = req.body;
 
-    //Data Check
+    // Data Check
     if (
       !firstName ||
       !lastName ||
@@ -81,46 +81,46 @@ exports.signUp = async (req, res) => {
       });
     }
 
-    //Password Check
+    // Password Check
     if (password !== confirmPassword) {
       return res.status(400).json({
         success: false,
-        message: "Password and Confirm Password Does'nt Match",
+        message: "Password and Confirm Password Don't Match",
       });
     }
 
-    //User Check
-    const exitUser = await User.findOne({ email, contactNumber });
+    // User Check
+    const existingUser = await User.findOne({ $or: [{ email }, { contactNumber }] });
 
-    if (exitUser) {
+    if (existingUser) {
       return res.status(403).json({
         success: false,
-        message: "User Already Exit!",
+        message: "User Already Exists!",
       });
     }
 
-    //fetch recent otp and validate
-    const recentOtp = await OTP.find({ email }).sort(
-      { createdAt: -1 }.limit(1)
-    );
-    console.log(recentOtp);
+    // Fetch recent OTP and validate
+    const recentOtp = await OTP.findOne({ email }).sort({ createdAt: -1 });
 
-    if (recentOtp.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP not found!",
-      });
-    } else if (recentOtp.otp !== otp) {
+    if (!recentOtp || recentOtp.otp !== otp) {
       return res.status(400).json({
         success: false,
         message: "Invalid OTP!",
       });
     }
 
-    //Hash Password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash Password
+    let hashedPassword;
+    try {
+      hashedPassword = await bcrypt.hash(password, 10);
+    } catch (hashError) {
+      return res.status(500).json({
+        success: false,
+        message: "Error hashing password",
+      });
+    }
 
-    //Create Entry in DB
+    // Create Entry in DB
     const user = await User.create({
       firstName,
       lastName,
@@ -132,27 +132,148 @@ exports.signUp = async (req, res) => {
       image: `https://api.dicebear.com/6.x/initials/svg?seed=${firstName} ${lastName}`,
     });
 
-    //Return success meassage
+    // Return success message
     return res.status(200).json({
-        success:true,
-        meassage:"User Registerd Successfful!"
-    })
-
+      success: true,
+      message: "User Registered Successfully!",
+    });
   } catch (error) {
-    
-    console.log(error.meassage)
+    console.log(error.message);
     return res.status(500).json({
-        success:false,
-        meassage:"User Registration Failed! Try Again"
-    })
+      success: false,
+      message: "User Registration Failed! Try Again",
+    });
   }
 };
 
 //Log In Controller
 exports.logIn = async (req, res) => {
-    try {
-        
-    } catch (error) {
-        
+  try {
+      // Fetching data from request body
+      const { email, password } = req.body;
+
+      // Validation: Check if email or password is missing
+      if (!email || !password) {
+          return res.status(400).json({
+              success: false,
+              message: "Please fill in all login details correctly!" 
+          });
+      }
+
+      // Check if user exists
+      const existingUser = await User.findOne({ email }); 
+      if (!existingUser) {
+          return res.status(404).json({ 
+              success: false,
+              message: "User is not registered!"
+          });
+      }
+
+      // Validate password
+      if (await bcrypt.compare(password, existingUser.password)) {
+          // Create JWT payload
+          const payload = {
+              email: existingUser.email,
+              id: existingUser._id, 
+              role: existingUser.role,
+          };
+
+          // Generate JWT token
+          const token = jwt.sign(
+              payload,
+              process.env.JWT_SECRET,
+              { expiresIn: "2h" }
+          );
+
+          // Update user document (optional)
+          existingUser.token = token;
+          existingUser.password = undefined; 
+          // await existingUser.save(); // Uncomment if you want to persist the token in the database
+
+          // Set cookie options
+          const options = {
+              expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), 
+              httpOnly: true,
+              secure: true, 
+              sameSite: 'None' 
+          };
+
+          // Send response with cookie
+          res.status(200)
+              .cookie("token", token, options)
+              .json({
+                  success: true,
+                  token,
+                  user: { 
+                      email: existingUser.email,
+                      role: existingUser.role,
+                      id: existingUser._id
+                  },
+                  message: "Logged in successfully!"
+              });
+      } else {
+          return res.status(401).json({ 
+              success: false,
+              message: "Incorrect password!"
+          });
+      }
+
+  } catch (error) {
+      console.error("Login error:", error); 
+      return res.status(500).json({
+          success: false,
+          message: "Login failed. Please try again later."
+      });
+  }
+};
+
+
+//Change Password
+exports.changePassword = async (req, res) =>{
+  try {
+
+    //fetch Data and Validation
+    const {email, oldPassword, newPassword, newConfirmPassword} = req.body;
+    if(!email || !oldPassword || !newPassword || !newConfirmPassword ){
+      return res.status(403).json({
+        success:false,
+        message:"Fill The Details Correctly"
+      })
     }
+
+    //User Fetch
+    const user = await User.findOne({email})
+    if(!user){
+      return res.status(404).json({
+        success: false,
+        message: "User not found!",
+      });
+    }
+
+    //validation
+    if(await bcrypt.compare(oldPassword, user.password)){
+      return res.status(404).json({
+        success:false,
+        message:"Current Password is not matching"
+      })
+    }
+
+    //Password Hasing and Save
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedNewPassword;
+    await user.save()
+
+     // Return success message
+     return res.status(200).json({
+      success: true,
+      message: "Password changed successfully!",
+    });
+
+  } catch (error) {
+    console.error("Error in changePassword:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong! Try again.",
+    });
+  }
 }
