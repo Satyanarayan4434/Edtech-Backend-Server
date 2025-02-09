@@ -52,8 +52,13 @@ const userSchema = new mongoose.Schema({
     },
     image:{
         type:String
+    },
+    token:{
+        type:String
+    },
+    resetPasswordExpires:{
+        type:Date
     }
-
 });
 
 userSchema.plugin(uniqueValidator);

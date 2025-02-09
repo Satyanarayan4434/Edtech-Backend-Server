@@ -175,7 +175,7 @@ exports.logIn = async (req, res) => {
           const payload = {
               email: existingUser.email,
               id: existingUser._id, 
-              role: existingUser.role,
+              accountType: existingUser.accountType,
           };
 
           // Generate JWT token
@@ -206,7 +206,7 @@ exports.logIn = async (req, res) => {
                   token,
                   user: { 
                       email: existingUser.email,
-                      role: existingUser.role,
+                      accountType: existingUser.accountType,
                       id: existingUser._id
                   },
                   message: "Logged in successfully!"
