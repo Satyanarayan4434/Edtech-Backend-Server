@@ -227,7 +227,6 @@ exports.logIn = async (req, res) => {
   }
 };
 
-
 //Change Password
 exports.changePassword = async (req, res) =>{
   try {
@@ -276,4 +275,4 @@ exports.changePassword = async (req, res) =>{
       message: "Something went wrong! Try again.",
     });
   }
-}
+};

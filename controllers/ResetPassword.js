@@ -50,7 +50,8 @@ exports.resetPasswordLink = async (req, res) => {
   }
 };
 
-const resetPassword = async (req, res) => {
+
+exports.resetPassword = async (req, res) => {
   try {
     //Data Fetch
     const { password, confirmPassword, token } = req.body;
