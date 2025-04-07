@@ -102,17 +102,15 @@ exports.getAllRating = async (req, res) => {
       .populate({ path: "course", select: "courseName" })
       .exec();
 
-      return res.status(200).json({
-        success:true,
-        message:"All Rating and Reviews Fetched",
-        data:ratingAndReviews
-      })
+    return res.status(200).json({
+      success: true,
+      message: "All Rating and Reviews Fetched",
+      data: ratingAndReviews,
+    });
   } catch (error) {
     return res.status(500).json({
-        success:false,
-        message:"Error while fetching Rating and Reviews"
-    })
+      success: false,
+      message: "Error while fetching Rating and Reviews",
+    });
   }
 };
-
-
