@@ -3,6 +3,7 @@ const Category = require("../models/Category");
 const User = require("../models/User");
 const { uploadImageToCloudinary } = require("../utils/imageUploader");
 const { populate } = require("../model/Course");
+
 // Function to create a new course
 exports.createCourse = async (req, res) => {
   try {
@@ -121,6 +122,8 @@ exports.createCourse = async (req, res) => {
   }
 };
 
+
+//Get All Course
 exports.getAllCourses = async (req, res) => {
   try {
     const allCourses = await Course.find(
@@ -160,7 +163,7 @@ exports.getCourseDetails = async (req, res) => {
         populate: "additionalDetails",
       })
       .populate("category")
-      .populate("ratingAndReviews")
+      // .populate("ratingAndReviews")
       .populate({
         path: "courseContent",
         populate: "subSection",
