@@ -2,6 +2,7 @@ const Course = require("../models/Course");
 const Category = require("../models/Category");
 const User = require("../models/User");
 const { uploadImageToCloudinary } = require("../utils/imageUploader");
+const { populate } = require("../model/Course");
 // Function to create a new course
 exports.createCourse = async (req, res) => {
 	try {
@@ -150,3 +151,33 @@ exports.getAllCourses = async (req, res) => {
 };
 
 //getCourseDetails
+const getCourseDetails = async(req, res) =>{
+	try {
+		const {courseId} = req.body;
+		const courseDetails = await Course.find({_id:courseId}).populate({
+			path:"instructor",
+			populate:"additionalDetails"
+		}).populate("category").populate("ratingAndReviews").populate({
+			path:"courseContent",
+			populate:"subSection"
+		}).exec()
+
+
+		if(!courseDetails){
+			return res.status(400).json({
+				success:false,
+				message:"Could'nt find the course"
+			})
+		}
+		return res.status(200).json({
+			success:true,
+			message:"Found the course details"
+		})
+
+	} catch (error) {
+		return res.status(500).json({
+			success:false,
+			message:"Could'nt find the course"
+		})
+	}
+}
