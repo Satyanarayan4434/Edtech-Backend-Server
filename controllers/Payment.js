@@ -2,9 +2,7 @@ const { instance } = require("../config/razorpay");
 const Course = require("../models/Course");
 const User = require("../models/User");
 const mailSender = require("../utils/mailSender");
-const {
-  courseEnrollmentEmail,
-} = require("../mail/templates/courseEnrollmentEmail");
+const {courseEnrollmentEmail} = require("../mail/templates/courseEnrollmentEmail");
 const { default: mongoose } = require("mongoose");
 
 //capture the payment and initiate the Razorpay order
@@ -92,6 +90,8 @@ exports.verifySignature = async (req, res) => {
   const signature = req.headers["x-razorpay-signature"];
 
   const shasum = crypto.createHmac("sha256", webhookSecret);
+
+  //Not understand yet
   shasum.update(JSON.stringify(req.body));
   const digest = shasum.digest("hex");
 
@@ -119,7 +119,7 @@ exports.verifySignature = async (req, res) => {
 
       console.log(enrolledCourse);
 
-      //find the student andadd the course to their list enrolled courses me
+      //find the student and add the course to their list enrolled courses me
       const enrolledStudent = await User.findOneAndUpdate(
         { _id: userId },
         { $push: { courses: courseId } },
