@@ -1,11 +1,11 @@
 const bcrypt = require("bcrypt");
-const User = require("../models/User");
-const OTP = require("../models/OTP");
+const User = require("../model/User");
+const OTP = require("../model/OTP");
 const jwt = require("jsonwebtoken");
 const otpGenerator = require("otp-generator");
 const mailSender = require("../utils/mailSender");
 const { passwordUpdated } = require("../mail/templates/passwordUpdate");
-const Profile = require("../models/Profile");
+const Profile = require("../model/Profile");
 require("dotenv").config();
 
 // Signup Controller for Registering USers

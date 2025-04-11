@@ -1,5 +1,5 @@
-const Section = require("../models/Section");
-const Course = require("../models/Course");
+const Section = require("../model/Section");
+const Course = require("../model/Course");
 // CREATE a new section
 exports.createSection = async (req, res) => {
   try {

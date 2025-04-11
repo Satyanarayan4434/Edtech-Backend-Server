@@ -1,5 +1,5 @@
-const Profile = require("../models/Profile");
-const User = require("../models/User");
+const Profile = require("../model/Profile");
+const User = require("../model/User");
 const { uploadImageToCloudinary } = require("../utils/imageUploader");
 // Method for updating a profile
 exports.updateProfile = async (req, res) => {

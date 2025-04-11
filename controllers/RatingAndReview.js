@@ -2,7 +2,7 @@ const RatingAndReview = require("../model/RatingAndReview");
 const Course = require("../model/Course");
 const { default: mongoose } = require("mongoose");
 
-exports.createRatingAndReview = async (req, res) => {
+exports.createRating = async (req, res) => {
   try {
     const userId = req.user.id;
     const { rating, review, courseId } = req.body;
